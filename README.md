@@ -1,5 +1,6 @@
 
-# mermaid_chart_gen
+# AI Chart Generation with Mermaid
+
 Rewrote FlowGPT (https://github.com/nilooy/flowgpt/) in Python and added support for Gemini, HuggingFace, and Ollama. Updated UI and made parsing changes.
 
 To run, just clone the repository and run app.py which will start the local Flask app at http://127.0.0.1:5000
