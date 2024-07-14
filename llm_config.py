@@ -33,28 +33,28 @@ class LLMConfig:
         self.provider = provider.lower()
         self.model = model
         self.api_key = api_key or self._get_api_key()
-        if not self.api_key and self.provider != "ollama":
-            raise ValueError(f"API key for {self.provider} is not set. Please set the appropriate environment variable.")
+        # if not self.api_key and self.provider != "ollama":
+        #     raise ValueError(f"API key for {self.provider} is not set. Please set the appropriate environment variable.")
         self.base_url = base_url or self._get_base_url()
         self.params = kwargs
 
-    def _get_api_key(self) -> Optional[str]:
-        """
-        Retrieves the API key from environment variables based on the provider.
+    # def _get_api_key(self) -> Optional[str]:
+    #     """
+    #     Retrieves the API key from environment variables based on the provider.
 
-        Returns:
-            Optional[str]: The API key if found, None otherwise.
-        """
-        env_var_map = {
-            "openai": "OPENAI_API_KEY",
-            "huggingface": "HF_TOKEN",
-            "huggingface-openai": "HF_TOKEN",
-            "huggingface-text": "HF_TOKEN",
-            "gemini": "GENAI_API_KEY",
-            "sdxl": "HF_TOKEN",
-        }
-        env_var = env_var_map.get(self.provider)
-        return os.environ.get(env_var) if env_var else None
+    #     Returns:
+    #         Optional[str]: The API key if found, None otherwise.
+    #     """
+    #     env_var_map = {
+    #         "openai": "OPENAI_API_KEY",
+    #         "huggingface": "HF_TOKEN",
+    #         "huggingface-openai": "HF_TOKEN",
+    #         "huggingface-text": "HF_TOKEN",
+    #         "gemini": "GENAI_API_KEY",
+    #         "sdxl": "HF_TOKEN",
+    #     }
+    #     env_var = env_var_map.get(self.provider)
+    #     return os.environ.get(env_var) if env_var else None
 
     def _get_base_url(self) -> Optional[str]:
         """
