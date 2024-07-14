@@ -30,6 +30,7 @@ Make sure you have an .env file for these values:
 
 # Examples for Different LLM Providers:
 
+```python
 config = LLMConfig("ollama", "mistral:v0.3", temperature=0.1, max_tokens=4096)
         llm = OllamaLLM(config)
 
@@ -38,3 +39,4 @@ config = LLMConfig("gemini", "gemini-1.5-flash-latest", temperature=0.1, max_tok
 
 config = LLMConfig("huggingface-text", "meta-llama/Meta-Llama-3-70B-Instruct", temperature=0.1, max_tokens=4096)
         llm = HFTextLLM(config)
+```
