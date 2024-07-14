@@ -6,7 +6,7 @@ import time
 import re
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-from llm_config import LLMConfig, HFOpenAIAPILLM
+from llm_config import LLMConfig, HFOpenAIAPILLM, OllamaLLM, OpenAILLM, HFTextLLM, GeminiLLM
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
@@ -99,8 +99,8 @@ async def generate(input: str, selected_template: str, timeout: int = 300) -> Di
             raise ValueError(f"Invalid template: {selected_template}. Available templates: {', '.join(available_templates)}")
 
         # Create LLMConfig and HFOpenAIAPILLM instances
-        config = LLMConfig("huggingface-openai", "meta-llama/Meta-Llama-3-70B-Instruct", temperature=0.1, max_tokens=4096)
-        llm = HFOpenAIAPILLM(config)
+        config = LLMConfig("ollama", "l3custom", temperature=0.1, max_tokens=4096)
+        llm = OllamaLLM(config)
 
         syntax_doc = read_syntax_file(selected_template)
 

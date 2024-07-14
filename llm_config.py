@@ -178,7 +178,7 @@ class GeminiLLM(BaseLLM):
         generation_params = {}
         if 'temperature' in self.config.params:
             generation_params['temperature'] = self.config.params['temperature']
-        if 'max_output_tokens' in self.config.params:
+        if 'max_output_tokens' or 'max_tokens' or 'max_new_tokens' in self.config.params:
             generation_params['max_output_tokens'] = self.config.params['max_output_tokens']
         if 'top_p' in self.config.params:
             generation_params['top_p'] = self.config.params['top_p']
@@ -257,7 +257,7 @@ class HFOpenAIAPILLM(BaseLLM):
         return response.choices[0].message.content
 
     
-class Ollama(BaseLLM):
+class OllamaLLM(BaseLLM):
     """
     A class representing an Ollama served Language Model.
 
@@ -368,7 +368,7 @@ class LLMFactory:
         "sdxl": SDXLLLM,
         "huggingface-openai": HFOpenAIAPILLM,
         "huggingface-text": HFTextLLM,
-        "ollama": Ollama
+        "ollama": OllamaLLM
     }
 
     @staticmethod
