@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flowchart Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #6EE7B7 0%, #A7F070 100%);
+            --secondary-gradient: linear-gradient(135deg, #3B82F6 0%, #9333EA 100%);
+            --background-dark: #1E1E1E;
+            --text-light: #F3F4F6;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background-dark);
+            color: var(--text-light);
+        }
+
+        .btn-grad {
+            background-image: var(--primary-gradient);
+            color: #000;
+            font-weight: 600;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: all 0.3s ease-in-out;
+        }
+
+        .btn-grad:hover {
+            background-image: var(--secondary-gradient);
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .bg-stripe {
+            background: var(--background-dark) repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 7px,
+                rgba(255, 255, 255, 0.03) 9px,
+                rgba(255, 255, 255, 0.03) 13px,
+                transparent 13px,
+                transparent 21px
+            );
+        }
+
+        .input-custom, .select-custom {
+            background-color: #2D3748;
+            border: 1px solid #4A5568;
+            color: var(--text-light);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            width: 100%;
+        }
+
+        .input-custom:focus, .select-custom:focus {
+            outline: none;
+            border-color: #4299E1;
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5);
+        }
+
+        .title-gradient {
+            background-image: var(--primary-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .mermaid svg {
+            width: 100%; /* Adjust this value as needed */
+            height: auto; /* This will maintain the aspect ratio */
+            max-width: 100%;
+            max-height: 100%;
+        }
+        #chartContainer {
+            width: 90vw; /* Control the width based on viewport width */
+            height: 90vh; /* Adjust height as needed, here using viewport height */
+            min-height: 500px; /* Ensures a minimum height */
+            min-width: 800px;
+        }
+
+    </style>
+</head>
+<body class="bg-stripe">
+    {{ nav_html|safe }}
+
+    <div class="container mx-auto px-4 py-8 min-h-screen flex flex-col">
+        <div class="flex-grow flex flex-col justify-center items-center">
+            <div id="chartContainer" style="width: 90vw; height: auto;" class="w-90vw max-w-4xl bg-gray-800 rounded-xl shadow-lg p-6 mb-8">
+                <div id="loadingIndicator" class="hidden flex flex-col justify-center items-center">
+                    <h1 class="text-4xl font-bold text-gray-300">Loading...</h1>
+                </div>
+                <div id="chart" class="hidden"></div>
+                <div id="initialContent" class="text-center py-12">
+                    <h1 class="text-6xl font-bold title-gradient mb-4">Generate</h1>
+                    <h3 class="text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-500 mb-2">Flowchart</h3>
+                    <h2 class="text-4xl font-bold text-gray-300">with AI</h2>
+                </div>
+            </div>
+
+            <form id="flowchartForm" class="w-full max-w-2xl">
+                <div class="flex flex-col sm:flex-row gap-4 mb-4">
+                    <input
+                        id="inputField"
+                        class="input-custom flex-grow"
+                        type="text"
+                        placeholder="What the flowchart is about"
+                        autofocus
+                    />
+                    <button
+                        type="submit"
+                        id="submitButton"
+                        class="btn-grad"
+                    >
+                        Generate
+                    </button>
+                </div>
+                <select id="templateSelect" class="select-custom w-full">
+                    {% for template in templates %}
+                        <option value="{{ template.value }}">{{ template.label }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+
+            <div id="exportOptions" class="hidden mt-6 flex gap-4">
+                <button onclick="exportSvg()" class="btn-grad">Export SVG</button>
+                <button onclick="copyMermaidCode()" class="btn-grad">Copy Mermaid Code</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: "dark",
+            securityLevel: "loose",
+            fontFamily: "Fira Code",
+        });
+
+        let chart = '';
+        const form = document.getElementById('flowchartForm');
+        const inputField = document.getElementById('inputField');
+        const submitButton = document.getElementById('submitButton');
+        const templateSelect = document.getElementById('templateSelect');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const chartDiv = document.getElementById('chart');
+        const initialContent = document.getElementById('initialContent');
+        const exportOptions = document.getElementById('exportOptions');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const input = inputField.value;
+            const selectedTemplate = templateSelect.value;
+
+            if (!input) return;
+
+            loadingIndicator.classList.remove('hidden');
+            chartDiv.classList.add('hidden');
+            initialContent.classList.add('hidden');
+            exportOptions.classList.add('hidden');
+            submitButton.disabled = true;
+            submitButton.classList.add('opacity-50');
+
+            try {
+                const res = await axios.post("/api/ask", {
+                    input,
+                    selectedTemplate,
+                });
+
+                if (res.data.text) {
+                    chart = res.data.text;
+                    chartDiv.innerHTML = `<div class="mermaid">${chart}</div>`;
+                    mermaid.init(undefined, ".mermaid");
+                    chartDiv.classList.remove('hidden');
+                    exportOptions.classList.remove('hidden');
+                } else {
+                    throw new Error("Sorry! a small issue occurred");
+                }
+            } catch (error) {
+                console.error(error);
+                chartDiv.innerHTML = '<p class="text-red-500 text-center py-4">Sorry! A small issue occurred</p>';
+                chartDiv.classList.remove('hidden');
+            } finally {
+                loadingIndicator.classList.add('hidden');
+                submitButton.disabled = false;
+                submitButton.classList.remove('opacity-50');
+            }
+        });
+
+        function exportSvg() {
+            const svgElement = document.querySelector('svg');
+            if (!svgElement) {
+                console.error('SVG not found');
+                return;
+            }
+        
+            const serializer = new XMLSerializer();
+            const svgString = serializer.serializeToString(svgElement);
+            const svgBlob = new Blob([svgString], {type: 'image/svg+xml;charset=utf-8'});
+            const url = URL.createObjectURL(svgBlob);
+        
+            // Use a base name for the file, such as 'artists_chart'
+            let baseName = 'artists_chart';
+        
+            // Append a timestamp for uniqueness
+            let timestamp = new Date().toISOString().replace(/[:.-]/g, '_');
+            let fileName = `${baseName}_${timestamp}.svg`;
+        
+            // Create a temporary link to trigger the download
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', fileName);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link); // Clean up
+        }
+
+        async function copyMermaidCode() {
+            try {
+                await navigator.clipboard.writeText(chart);
+                alert("Mermaid code copied to clipboard!");
+            } catch (error) {
+                console.error('Error copying Mermaid code:', error);
+                alert('Error copying Mermaid code');
+            }
+        }
+    </script>
+</body>
+</html>
