@@ -1,3 +1,9 @@
+![image](https://github.com/user-attachments/assets/fe1f3d45-fedf-4a9e-9236-4a1ae452ed26)
+
+![image](https://github.com/user-attachments/assets/8026ef2c-4284-415c-a9ee-907d083bdde3)
+
+
+
 # mermaid_chart_gen
 Rewrote FlowGPT (https://github.com/nilooy/flowgpt/) in Python and added support for Gemini, HuggingFace, and Ollama. Updated UI and made parsing changes.
 
