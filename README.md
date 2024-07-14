@@ -1,8 +1,3 @@
-![image](https://github.com/user-attachments/assets/fe1f3d45-fedf-4a9e-9236-4a1ae452ed26)
-
-![image](https://github.com/user-attachments/assets/8026ef2c-4284-415c-a9ee-907d083bdde3)
-
-
 
 # mermaid_chart_gen
 Rewrote FlowGPT (https://github.com/nilooy/flowgpt/) in Python and added support for Gemini, HuggingFace, and Ollama. Updated UI and made parsing changes.
@@ -10,6 +5,10 @@ Rewrote FlowGPT (https://github.com/nilooy/flowgpt/) in Python and added support
 To run, just clone the repository and run app.py which will start the local Flask app at http://127.0.0.1:5000
 
 _If you get strange syntax errors, upgrade Mermaid via npm/yarn/whichever you need_
+
+
+![image](https://github.com/user-attachments/assets/fe1f3d45-fedf-4a9e-9236-4a1ae452ed26)
+
 
 # To Change LLM Providers:
 
@@ -46,3 +45,5 @@ config = LLMConfig("gemini", "gemini-1.5-flash-latest", temperature=0.1, max_tok
 config = LLMConfig("huggingface-text", "meta-llama/Meta-Llama-3-70B-Instruct", temperature=0.1, max_tokens=4096)
         llm = HFTextLLM(config)
 ```
+
+![image](https://github.com/user-attachments/assets/8026ef2c-4284-415c-a9ee-907d083bdde3)
