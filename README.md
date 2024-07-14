@@ -20,3 +20,15 @@ Make sure you have an .env file for these values:
 - OPENAI_API_KEY=
 - HF_TOKEN=
 - GENAI_API_KEY=
+
+
+# Examples for Different LLM Providers:
+
+config = LLMConfig("ollama", "mistral:v0.3", temperature=0.1, max_tokens=4096)
+        llm = OllamaLLM(config)
+
+config = LLMConfig("gemini", "gemini-1.5-flash-latest", temperature=0.1, max_tokens=4096)
+        llm = GeminiLLM(config)
+
+config = LLMConfig("huggingface-text", "meta-llama/Meta-Llama-3-70B-Instruct", temperature=0.1, max_tokens=4096)
+        llm = HFTextLLM(config)
