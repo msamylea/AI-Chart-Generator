@@ -5,7 +5,6 @@ from mermaid_utils import render_mermaid, export_svg, copy_mermaid_code
 from template_utils import get_templates
 from llm_utils import get_available_llms, set_llm
 import asyncio
-from dotenv import load_dotenv
 import logging
 from openai import AuthenticationError, BadRequestError
 
