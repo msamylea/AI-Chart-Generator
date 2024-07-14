@@ -22,7 +22,7 @@ Make sure you have an .env file for these values:
 - OPENAI_API_KEY=
 - HF_TOKEN=
 - GENAI_API_KEY=
-
+*GENAI_API_KEY is for Google Gemini
 
 # Examples for Different LLM Providers:
 
