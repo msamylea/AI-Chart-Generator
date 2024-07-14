@@ -14,7 +14,7 @@ _If you get strange syntax errors, upgrade Mermaid via npm/yarn/whichever you ne
 - HuggingFace Text is HF models via InferenceClient
 - Gemini is Google Gemini models
 - Ollama is self served models
-- OpenAI is.. OpenAI1
+- OpenAI is.. OpenAI
 
 ![image](https://github.com/user-attachments/assets/37adae7d-e680-4e94-8cc8-b029f7c25706)
 
