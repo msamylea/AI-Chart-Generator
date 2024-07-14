@@ -1,6 +1,8 @@
 # mermaid_chart_gen
 Rewrote FlowGPT (https://github.com/nilooy/flowgpt/) in Python and added support for Gemini, HuggingFace, and Ollama. Updated UI and made parsing changes.
 
+_If you get strange syntax errors, upgrade Mermaid via npm/yarn/whichever you need_
+
 # To Change LLM Providers:
 
 Edit generate.py -> generate for this line to add provider, model, and kwargs:
