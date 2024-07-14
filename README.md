@@ -10,6 +10,12 @@ _If you get strange syntax errors, upgrade Mermaid via npm/yarn/whichever you ne
 
 # Updated UI and added ability to select LLM Provider, Model, enter API key, and set kwargs:
 
+- HuggingFace OpenAI is HF models using OpenAI API (typically used with HF Pro subscription)
+- HuggingFace Text is HF models via InferenceClient
+- Gemini is Google Gemini models
+- Ollama is self served models
+- OpenAI is.. OpenAI1
+
 ![image](https://github.com/user-attachments/assets/37adae7d-e680-4e94-8cc8-b029f7c25706)
 
 
