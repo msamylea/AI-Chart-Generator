@@ -4,9 +4,9 @@ import os
 import logging
 import time
 import re
-from tenacity import retry, stop_after_attempt, wait_exponential
-
-from llm_config import LLMConfig, HFOpenAIAPILLM, OllamaLLM, OpenAILLM, HFTextLLM, GeminiLLM
+from tenacity import retry, stop_after_attempt, wait_exponential, RetryError
+from openai import AuthenticationError, BadRequestError
+import inspect
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
@@ -21,25 +21,20 @@ def read_syntax_file(template: str) -> str:
     file_path = os.path.join(syntax_dir, f"{template.lower()}.md")
     try:
         with open(file_path, 'r') as file:
+            print(f"Reading syntax file: {file_path}")
             return file.read()
     except FileNotFoundError:
         raise ValueError(f"Syntax file not found for template: {template}")
-
-@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
-async def call_llm(llm, prompt: str, timeout: int):
-    loop = asyncio.get_event_loop()
-    return await loop.run_in_executor(None, lambda: llm.get_response(prompt))
-
 
 def extract_mermaid_code(response: str) -> str:
     # Define the supported diagram types
     diagram_types = r'(classDiagram|erDiagram|flowchart|mindmap|sequenceDiagram|stateDiagram|timeline|journey)'
     
     # Look for Mermaid code enclosed in ```mermaid ... ``` or just the content starting with a valid diagram type
-    mermaid_pattern = r'```mermaid\n([\s\S]*?)\n```'
+    mermaid_pattern = r'```(?:mermaid)?\n([\s\S]*?)\n```'
     diagram_pattern = rf'({diagram_types})[\s\S]*'
     
-    mermaid_match = re.search(mermaid_pattern, response)
+    mermaid_match = re.search(mermaid_pattern, response, re.IGNORECASE)
     if mermaid_match:
         code = mermaid_match.group(1).strip()
     else:
@@ -49,28 +44,30 @@ def extract_mermaid_code(response: str) -> str:
         else:
             code = response.strip()
     
-    # Ensure the code starts with a valid Mermaid diagram type
+    # Remove any leading text before the diagram type
+    code = re.sub(r'^.*?(' + diagram_types + ')', r'\1', code, flags=re.IGNORECASE | re.DOTALL)
+    
     if not re.match(rf'^{diagram_types}', code, re.IGNORECASE):
         code = 'flowchart LR\n' + code
-    
+
     # Split the code into lines
     lines = code.split('\n')
     processed_lines = []
-    
-    # Process each line
+
     for line in lines:
-        # Convert 'actor' and 'useCase' keywords to standard node definitions only for flowcharts
+        modified_line = re.sub(r'\|>', r'|', line)
+        
+        # Your existing logic for handling 'actor' and 'useCase'
         if re.match(r'^flowchart', lines[0], re.IGNORECASE):
             if line.strip().startswith(('actor', 'useCase')):
                 parts = line.split()
                 if len(parts) >= 4 and parts[2] == 'as':
-                    processed_lines.append(f"    {parts[3]}[{parts[1]}]")
+                    modified_line = f"    {parts[3]}[{parts[1]}]"
+                    processed_lines.append(modified_line)
                     continue
-        
-        # Add the line as is
-        processed_lines.append(line)
-    
-    # Join the processed lines back into a single string
+
+        processed_lines.append(modified_line)
+
     processed_code = '\n'.join(processed_lines)
     
     # Define a regex pattern for valid Mermaid syntax across different diagram types
@@ -87,26 +84,33 @@ def extract_mermaid_code(response: str) -> str:
         valid_lines = [line for line in processed_code.split('\n') 
                        if re.match(valid_syntax_pattern, line.strip(), re.VERBOSE | re.IGNORECASE)]
     
-    return processed_code
+    final_code = '\n'.join(valid_lines)
+    
+    print("Processed Mermaid Code:", final_code)
 
-async def generate(input: str, selected_template: str, timeout: int = 300) -> Dict[str, Any]:
+    return final_code
+
+
+async def generate(input: str, selected_template: str, llm, selected_model: str, temperature: float, max_tokens: int, timeout: int = 300) -> Dict[str, Any]:
     start_time = time.time()
     try:
-        logger.info(f"Starting generation for input: '{input}', template: {selected_template}")
+        logger.info(f"Starting generation for input: '{input}', template: {selected_template}, model: {selected_model}, temperature: {temperature}, max_tokens: {max_tokens}")
         
         available_templates = get_available_templates()
         if selected_template not in available_templates:
             raise ValueError(f"Invalid template: {selected_template}. Available templates: {', '.join(available_templates)}")
 
-        # Create LLMConfig and HFOpenAIAPILLM instances
-        config = LLMConfig("ollama", "l3custom", temperature=0.1, max_tokens=4096)
-        llm = OllamaLLM(config)
-
         syntax_doc = read_syntax_file(selected_template)
 
         prompt = f"{syntax_doc}\n\nInstructions:\n- use different shapes, colors and also use icons when possible as mentioned in the doc.\n- strict rules: do not add Note and do not explain the code and do not add any additional text except code,\n- do not use 'end' syntax\n- do not use any parenthesis inside block and only create a single block of code. always use underscores for attribute names instead of spaces.\n\nCreate a {selected_template} in mermaid syntax about: {input}"
 
-        response = await call_llm(llm, prompt, timeout)
+        try:
+            response = await call_llm(llm, prompt, temperature, max_tokens, timeout)
+        except RetryError as retry_error:
+            if isinstance(retry_error.last_attempt.exception(), (BadRequestError, AuthenticationError)):
+                raise retry_error.last_attempt.exception()
+            else:
+                raise
         
         logger.debug(f"Raw LLM output: {response}")
         
@@ -122,27 +126,18 @@ async def generate(input: str, selected_template: str, timeout: int = 300) -> Di
         end_time = time.time()
         logger.info(f"Total execution time: {end_time - start_time:.2f} seconds")
 
-# # Example usage (for testing purposes)
-# if __name__ == "__main__":
-#     import asyncio
-#     from dotenv import load_dotenv
-
-#     # Load environment variables from .env file
-#     load_dotenv()
-
-#     async def test_generate():
-#         print("Available templates:", get_available_templates())
-        
-#         # Test with different templates
-#         templates_to_test = ["FLOWCHART", "MINDMAP", "SEQUENCE"]
-        
-#         for template in templates_to_test:
-#             try:
-#                 print(f"\nTesting template: {template}")
-#                 result = await generate("Simple todo app", template)
-#                 print(f"Result for {template}:")
-#                 print(result['text'])
-#             except Exception as e:
-#                 print(f"An error occurred with {template}: {str(e)}")
-
-#     asyncio.run(test_generate())
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
+async def call_llm(llm, prompt: str, temperature: float, max_tokens: int, timeout: int):
+    loop = asyncio.get_event_loop()
+    
+    # Inspect the get_response method of the LLM instance
+    params = inspect.signature(llm.get_response).parameters
+    
+    # Prepare kwargs based on available parameters
+    kwargs = {'prompt': prompt}
+    if 'temperature' in params:
+        kwargs['temperature'] = temperature
+    if 'max_tokens' in params:
+        kwargs['max_tokens'] = max_tokens
+    
+    return await loop.run_in_executor(None, lambda: llm.get_response(**kwargs))

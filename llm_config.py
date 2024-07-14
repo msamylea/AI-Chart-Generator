@@ -2,6 +2,7 @@ from typing import Dict, Any, Optional, Union
 from abc import ABC, abstractmethod
 from openai import OpenAI
 import google.generativeai as genai
+from google.generativeai import GenerationConfig
 from huggingface_hub import InferenceClient
 from PIL import Image
 import os
@@ -149,7 +150,6 @@ class GeminiLLM(BaseLLM):
     Methods:
         _create_client(): Creates a Gemini Language Model client.
         get_response(prompt: str) -> str: Generates a response based on the given prompt.
-
     """
 
     def _create_client(self):
@@ -158,44 +158,42 @@ class GeminiLLM(BaseLLM):
 
         Returns:
             GenerativeModel: The Gemini Language Model client.
-
         """
         genai.configure(api_key=self.config.api_key)
         return genai.GenerativeModel(model_name=self.config.model)
 
-    def get_response(self, prompt: str) -> str:
+    def get_response(self, prompt: str, temperature: float = None, max_tokens: int = None) -> str:
         """
         Generates a response based on the given prompt.
 
         Args:
             prompt (str): The prompt for generating the response.
+            temperature (float, optional): The temperature for response generation.
+            max_tokens (int, optional): The maximum number of tokens to generate.
 
         Returns:
             str: The generated response.
-
         """
         # Define Gemini-specific parameters
         generation_params = {}
-        if 'temperature' in self.config.params:
-            generation_params['temperature'] = self.config.params['temperature']
-        # Corrected condition to check for the presence of any of the keys in self.config.params
-        if 'max_output_tokens' in self.config.params:
-            generation_params['max_output_tokens'] = self.config.params['max_output_tokens']
-        elif 'max_tokens' in self.config.params:
-            generation_params['max_output_tokens'] = self.config.params['max_tokens']
-        elif 'max_new_tokens' in self.config.params:
-            generation_params['max_output_tokens'] = self.config.params['max_new_tokens']
+        if temperature is not None:
+            generation_params['temperature'] = temperature
+        if max_tokens is not None:
+            generation_params['max_output_tokens'] = max_tokens
         if 'top_p' in self.config.params:
             generation_params['top_p'] = self.config.params['top_p']
         if 'top_k' in self.config.params:
             generation_params['top_k'] = self.config.params['top_k']
         
         # Create GenerationConfig with non-None parameters
-        generation_config = genai.GenerationConfig(**generation_params)
+        generation_config = GenerationConfig(**generation_params)
         
-        response = self.client.generate_content(prompt, generation_config=generation_config)
-        response.resolve()
-        return response.text
+        try:
+            response = self.client.generate_content(prompt, generation_config=generation_config)
+            response.resolve()
+            return response.text
+        except Exception as e:
+            raise ValueError(f"Error generating content with Gemini: {str(e)}")
 
 class SDXLLLM(BaseLLM):
     """
@@ -233,6 +231,8 @@ class SDXLLLM(BaseLLM):
         except Exception as e:
             return f"Error generating image: {str(e)}"
 
+from openai import OpenAI
+
 class HFOpenAIAPILLM(BaseLLM):
     """
     Hugging Face Language Model (HFLLM) class that uses the OpenAI API.
@@ -246,17 +246,18 @@ class HFOpenAIAPILLM(BaseLLM):
     Methods:
         _create_client: Creates a client object for making API requests.
         get_response: Gets a response from the language model given a prompt.
-
     """
 
     def _create_client(self):
         base_url = f"https://api-inference.huggingface.co/models/{self.config.model}/v1/"
         return OpenAI(base_url=base_url, api_key=self.config.api_key)
 
-    def get_response(self, prompt: str) -> str:
+    def get_response(self, prompt: str, temperature: float = 0.7, max_tokens: int = 4096) -> str:
         response = self.client.chat.completions.create(
             model=self.config.model,
-            messages=[{"role": "system", "content": prompt}],
+            messages=[{"role": "user", "content": prompt}],
+            temperature=temperature,
+            max_tokens=max_tokens,
             **self.config.params
         )
         return response.choices[0].message.content
@@ -285,12 +286,14 @@ class OllamaLLM(BaseLLM):
         """
         return OpenAI(base_url=self.config.base_url, api_key="ollama")
 
-    def get_response(self, prompt: str) -> str:
+    def get_response(self, prompt: str, temperature: float = 0.7, max_tokens: int = 4096) -> str:
         """
         Generates a response from the language model given a prompt.
 
         Args:
             prompt (str): The prompt for generating the response.
+            temperature (float): The temperature for response generation.
+            max_tokens (int): The maximum number of tokens to generate.
 
         Returns:
             str: The generated response from the language model.
@@ -298,6 +301,8 @@ class OllamaLLM(BaseLLM):
         response = self.client.chat.completions.create(
             model=self.config.model,
             messages=[{"role": "user", "content": prompt}],
+            temperature=temperature,
+            max_tokens=max_tokens,
             **self.config.params
         )
         return response.choices[0].message.content
@@ -325,43 +330,39 @@ class HFTextLLM(BaseLLM):
         """
         return InferenceClient(model=self.config.model, token=self.config.api_key)
 
-    def get_response(self, prompt: str) -> str:
+    def get_response(self, prompt: str, model: str = None, temperature: float = None, max_tokens: int = None) -> str:
         """
         Generates a response from the language model given a prompt.
 
         Args:
             prompt (str): The prompt for generating the response.
+            model (str, optional): The model to use. If provided, it overrides the default model.
+            temperature (float, optional): The temperature for response generation.
+            max_tokens (int, optional): The maximum number of tokens to generate.
 
         Returns:
             str: The generated response from the language model.
         """
         parameters = {}
-        if 'temperature' in self.config.params:
-            parameters['temperature'] = self.config.params['temperature']
-        if 'max_tokens' in self.config.params:
-            parameters['max_new_tokens'] = self.config.params['max_tokens']
+        if temperature is not None:
+            parameters['temperature'] = temperature
+        if max_tokens is not None:
+            parameters['max_new_tokens'] = max_tokens
         if 'top_p' in self.config.params:
             parameters['top_p'] = self.config.params['top_p']
         if 'top_k' in self.config.params:
             parameters['top_k'] = self.config.params['top_k']
-        if 'tools' in self.config.params:
-            parameters['tools'] = self.config.params['tools']
-        if 'tool_choice' in self.config.params:
-            parameters['tool_choice'] = self.config.params['tool_choice']
-        if 'tool_prompt' in self.config.params:
-            parameters['tool_prompt'] = self.config.params['tool_prompt']
-        if 'stream' in self.config.params:
-            parameters['stream'] = self.config.params['stream']
 
-        response = self.client.text_generation(
+        client = self._create_client()
+        if model:
+            client.model = model
+
+        response = client.text_generation(
             prompt,
             **parameters
         )
 
-        if 'tools' in self.config.params:
-            return response.choices[0].message.tool_calls[0].function
-        else:
-            return response
+        return response
 
 class LLMFactory:
     """
@@ -370,7 +371,7 @@ class LLMFactory:
     llm_classes = {
         "openai": OpenAILLM,
         "gemini": GeminiLLM,
-        "sdxl": SDXLLLM,
+        # "sdxl": SDXLLLM,
         "huggingface-openai": HFOpenAIAPILLM,
         "huggingface-text": HFTextLLM,
         "ollama": OllamaLLM
