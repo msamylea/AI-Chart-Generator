@@ -3,6 +3,7 @@
 Rewrote FlowGPT (https://github.com/nilooy/flowgpt/) in Python and added support for Gemini, HuggingFace, and Ollama. Updated UI and made parsing changes.
 
 To run, just clone the repository and run app.py which will start the local Flask app at http://127.0.0.1:5000
+## Important -- Read the LLM Providers Sections below for setting up various LLM Providers and models.  This won't work without an .env file and the LLM provider setup.  I'm too busy right now to add in the dropdown to select provider, model, etc, so if someone wants to do that, hooray.
 
 _If you get strange syntax errors, upgrade Mermaid via npm/yarn/whichever you need_
 
