@@ -10,11 +10,11 @@ Edit generate.py -> generate for this line:
         llm = HFOpenAIAPILLM(config)
 ```
 Options for LLMs are:
-        - "openai": OpenAILLM,
-        - "gemini": GeminiLLM,
-        - "huggingface-openai": HFOpenAIAPILLM (This is for HuggingFace LLM calls using the OpenAI API standard)
-        - "huggingface-text": HFTextLLM (This is for HuggingFace LLM calls using InferenceClient)
-        - "ollama": Ollama
+- "openai": OpenAILLM,
+- "gemini": GeminiLLM,
+- "huggingface-openai": HFOpenAIAPILLM (This is for HuggingFace LLM calls using the OpenAI API standard)
+- "huggingface-text": HFTextLLM (This is for HuggingFace LLM calls using InferenceClient)
+- "ollama": Ollama
         
 Add your LLM Provider, Model, and any kwargs for that specific LLM provider/model (example kwargs: temperature, max_tokens, tools, etc).  
 
