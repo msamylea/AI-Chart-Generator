@@ -178,8 +178,13 @@ class GeminiLLM(BaseLLM):
         generation_params = {}
         if 'temperature' in self.config.params:
             generation_params['temperature'] = self.config.params['temperature']
-        if 'max_output_tokens' or 'max_tokens' or 'max_new_tokens' in self.config.params:
+        # Corrected condition to check for the presence of any of the keys in self.config.params
+        if 'max_output_tokens' in self.config.params:
             generation_params['max_output_tokens'] = self.config.params['max_output_tokens']
+        elif 'max_tokens' in self.config.params:
+            generation_params['max_output_tokens'] = self.config.params['max_tokens']
+        elif 'max_new_tokens' in self.config.params:
+            generation_params['max_output_tokens'] = self.config.params['max_new_tokens']
         if 'top_p' in self.config.params:
             generation_params['top_p'] = self.config.params['top_p']
         if 'top_k' in self.config.params:
