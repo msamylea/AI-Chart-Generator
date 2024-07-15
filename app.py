@@ -1,12 +1,9 @@
 from flask import Flask, render_template, request, jsonify
-from prompt_by_template import TemplateEnum
 from generate import generate
-from mermaid_utils import render_mermaid, export_svg, copy_mermaid_code
+from mermaid_utils import render_mermaid
 from template_utils import get_templates
 from llm_utils import get_available_llms, set_llm
-import asyncio
 import logging
-from openai import AuthenticationError, BadRequestError
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -45,21 +42,20 @@ def get_models():
     else:
         return jsonify({"error": "Unknown provider"}), 400
 
-
-
 @app.route('/api/ask', methods=['POST'])
 async def handler():
     logger.debug(f"Received request data: {request.json}")
     
     data = request.json
     input_text = data.get('input')
-    selected_template = data.get('selectedTemplate', TemplateEnum.FLOWCHART.value)
+    selected_template = data.get('selectedTemplate')
     selected_provider = data.get('provider', '').strip()
     selected_model = data.get('model', '').strip()
     temperature = float(data.get('temperature', 0.7))
     max_tokens = int(data.get('maxTokens', 4096))
     api_key = data.get('apiKey', '').strip()
 
+    print("Selected Template: ", selected_template)
     logger.debug(f"Parsed request data: input_text={input_text}, selected_template={selected_template}, "
                  f"selected_provider={selected_provider}, selected_model={selected_model}, "
                  f"temperature={temperature}, max_tokens={max_tokens}")

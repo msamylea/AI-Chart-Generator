@@ -9,6 +9,12 @@ class TemplateEnum(Enum):
     ENTITYRELATIONSHIP = "ENTITYRELATIONSHIP"
     SEQUENCE = "SEQUENCE"
     STATE = "STATE"
+    GANTT = "GANTT"
+    QUADRANT = "QUADRANT"
+    SANKEY = "SANKEY"
+    REQUIREMENT = "REQUIREMENT"
+    BLOCK = "BLOCK"  
+    ZENUML = "ZENUML"  
 
 def get_templates() -> List[Dict[str, str]]:
     return [
@@ -19,4 +25,10 @@ def get_templates() -> List[Dict[str, str]]:
         {"label": "Entity Relationship", "value": TemplateEnum.ENTITYRELATIONSHIP.value},
         {"label": "Sequence Diagram", "value": TemplateEnum.SEQUENCE.value},
         {"label": "State Diagram", "value": TemplateEnum.STATE.value},
+        {"label": "Gantt Chart", "value": TemplateEnum.GANTT.value},
+        {"label": "Quadrant Diagram", "value": TemplateEnum.QUADRANT.value},
+        {"label": "Sankey Diagram", "value": TemplateEnum.SANKEY.value},
+        {"label": "Requirement Diagram", "value": TemplateEnum.REQUIREMENT.value},
+        {"label": "Block", "value": TemplateEnum.BLOCK.value},  
+        {"label": "ZenUML", "value": TemplateEnum.ZENUML.value},
     ]

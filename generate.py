@@ -7,6 +7,7 @@ import re
 from tenacity import retry, stop_after_attempt, wait_exponential, RetryError
 from openai import AuthenticationError, BadRequestError
 import inspect
+from prompt_by_template import TemplateEnum, prompt_by_template
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
@@ -16,19 +17,52 @@ def get_available_templates() -> List[str]:
     syntax_dir = os.path.join(os.path.dirname(__file__), 'syntax')
     return [file[:-3].upper() for file in os.listdir(syntax_dir) if file.endswith('.md')]
 
+import os
+import re
+
 def read_syntax_file(template: str) -> str:
     syntax_dir = os.path.join(os.path.dirname(__file__), 'syntax')
     file_path = os.path.join(syntax_dir, f"{template.lower()}.md")
     try:
-        with open(file_path, 'r') as file:
-            print(f"Reading syntax file: {file_path}")
-            return file.read()
+        with open(file_path, 'r', encoding='utf-8') as file:
+            content = file.read()
+            
+        # Extract the syntax section
+        syntax_section = re.search(r'## Syntax\n\n(.*?)\n\n', content, re.DOTALL)
+        if syntax_section:
+            syntax = syntax_section.group(1)
+        else:
+            syntax = "Syntax section not found in the file."
+        
+        # Extract examples
+        examples = re.findall(r'```mermaid-example\n(.*?)```', content, re.DOTALL)
+        
+        return f"Syntax:\n{syntax}\n\nExamples:\n" + "\n\n".join(examples)
     except FileNotFoundError:
         raise ValueError(f"Syntax file not found for template: {template}")
+    except UnicodeDecodeError:
+        # If UTF-8 fails, try with ISO-8859-1 encoding
+        try:
+            with open(file_path, 'r', encoding='iso-8859-1') as file:
+                content = file.read()
+            
+            # Extract the syntax section
+            syntax_section = re.search(r'## Syntax\n\n(.*?)\n\n', content, re.DOTALL)
+            if syntax_section:
+                syntax = syntax_section.group(1)
+            else:
+                syntax = "Syntax section not found in the file."
+            
+            # Extract examples
+            examples = re.findall(r'```mermaid-example\n(.*?)```', content, re.DOTALL)
+            
+            return f"Syntax:\n{syntax}\n\nExamples:\n" + "\n\n".join(examples)
+        except Exception as e:
+            raise ValueError(f"Error reading syntax file for template {template}: {str(e)}")
 
 def extract_mermaid_code(response: str) -> str:
     # Define the supported diagram types
-    diagram_types = r'(classDiagram|erDiagram|flowchart|mindmap|sequenceDiagram|stateDiagram|timeline|journey)'
+    diagram_types = r'(classDiagram|erDiagram|flowchart|mindmap|sequenceDiagram|stateDiagram|timeline|journey|gantt|block-beta|quadrantChart|sankey-beta|requirementDiagram|zenuml)'
     
     # Look for Mermaid code enclosed in ```mermaid ... ``` or just the content starting with a valid diagram type
     mermaid_pattern = r'```(?:mermaid)?\n([\s\S]*?)\n```'
@@ -47,42 +81,79 @@ def extract_mermaid_code(response: str) -> str:
     # Remove any leading text before the diagram type
     code = re.sub(r'^.*?(' + diagram_types + ')', r'\1', code, flags=re.IGNORECASE | re.DOTALL)
     
-    if not re.match(rf'^{diagram_types}', code, re.IGNORECASE):
-        code = 'flowchart LR\n' + code
-
     # Split the code into lines
     lines = code.split('\n')
     processed_lines = []
+    block_stack = []
+    valid_verify_methods = ['analysis', 'demonstration', 'inspection', 'test']
+
 
     for line in lines:
-        modified_line = re.sub(r'\|>', r'|', line)
+        stripped_line = line.strip()
         
-        # Your existing logic for handling 'actor' and 'useCase'
-        if re.match(r'^flowchart', lines[0], re.IGNORECASE):
-            if line.strip().startswith(('actor', 'useCase')):
-                parts = line.split()
-                if len(parts) >= 4 and parts[2] == 'as':
-                    modified_line = f"    {parts[3]}[{parts[1]}]"
-                    processed_lines.append(modified_line)
-                    continue
+        if stripped_line.startswith(('block:', 'subgraph')):
+            block_stack.append(stripped_line)
+        elif stripped_line == 'end' and block_stack:
+            block_stack.pop()
 
-        processed_lines.append(modified_line)
+        if 'verifymethod:' in line:
+            # Split the line at 'verifymethod:'
+            parts = line.split('verifymethod:', 1)
+            # Get the verify method value
+            verify_method = parts[1].strip().lower()
+            # Check if the verify method is valid
+            if verify_method not in valid_verify_methods:
+                # If not valid, replace with a default value
+                verify_method = 'inspection'
+            # Reconstruct the line with the correct verify method
+            line = f"{parts[0]}verifymethod: {verify_method}"
+        
+        processed_lines.append(line)
+        
+        # If we're at the end of a block and there's no 'end', add it
+        if stripped_line and not stripped_line.startswith(('block:', 'subgraph', 'end')) and block_stack:
+            indent = len(line) - len(line.lstrip())
+            if indent <= len(block_stack[-1]) - len(block_stack[-1].lstrip()):
+                processed_lines.append(' ' * indent + 'end')
+                block_stack.pop()
+
+    # Add any remaining 'end' statements
+    while block_stack:
+        processed_lines.append('end')
+        block_stack.pop()
 
     processed_code = '\n'.join(processed_lines)
     
-    # Define a regex pattern for valid Mermaid syntax across different diagram types
+    # Define a more permissive regex pattern for valid Mermaid syntax
     valid_syntax_pattern = rf"""
-        ^\s*({diagram_types}|class\s+[\w<>]+|classDef\s+\w+|\w+\s*(?:-->|--|==|::|:|<=|=|\+|-|\)|\(|\*)\s*[\w<>"']+|[\w\s"'\[\]]+(?:-->|---|===|~~~|:)[\w\s"'\[\]]+|\w+\s*\[.*?\]|\w+\s*\(.*?\)|\w+>.*?]|\w+\s*:\s*.*|\s*section\s+.*|\s*\d+\s*:.*|\s*title\s+.*|\s*[-+*]\s+.*|.*%%.*)
+        ^\s*({diagram_types}|
+        \w+.*|
+        \s*subgraph.*|
+        \s*end.*|
+        \s*class\s+.*|
+        \s*classDef\s+.*|
+        \s*\w+.*(?:-->|--|==|::|:|<=|=|\+|-|\)|\(|\*).*|
+        \s*[\w\s"'\[\]]+(?:-->|---|===|~~~|:).*|
+        \s*\w+\s*\[.*?\].*|
+        \s*\w+\s*\(.*?\).*|
+        \s*\w+>.*?].*|
+        \s*\w+\s*:.*|
+        \s*section\s+.*|
+        \s*\d+\s*:.*|
+        \s*title\s+.*|
+        \s*[-+*]\s+.*|
+        \s*%%.*|
+        \s*)
     """
     
-    # Special handling for mindmap
-    if re.match(r'^mindmap', processed_code, re.IGNORECASE):
-        # For mindmap, we want to keep all lines that are not completely blank
+    # Special handling for mindmap and block-beta
+    if re.match(r'^(mindmap|block-beta)', processed_code, re.IGNORECASE):
+        # For mindmap and block-beta, we want to keep all lines that are not completely blank
         valid_lines = [line for line in processed_code.split('\n') if line.strip()]
     else:
         # For other diagrams, use the regex pattern
         valid_lines = [line for line in processed_code.split('\n') 
-                       if re.match(valid_syntax_pattern, line.strip(), re.VERBOSE | re.IGNORECASE)]
+                       if re.match(valid_syntax_pattern, line, re.VERBOSE | re.IGNORECASE)]
     
     final_code = '\n'.join(valid_lines)
     
@@ -102,7 +173,21 @@ async def generate(input: str, selected_template: str, llm, selected_model: str,
 
         syntax_doc = read_syntax_file(selected_template)
 
-        prompt = f"{syntax_doc}\n\nInstructions:\n- use different shapes, colors and also use icons when possible as mentioned in the doc.\n- strict rules: do not add Note and do not explain the code and do not add any additional text except code,\n- do not use 'end' syntax\n- do not use any parenthesis inside block and only create a single block of code. always use underscores for attribute names instead of spaces.\n\nCreate a {selected_template} in mermaid syntax about: {input}"
+        prompt = f"""
+        Create a {selected_template} diagram in Mermaid syntax about: {input}
+
+        Use the following syntax and examples as a guide:
+
+        {syntax_doc}
+
+        Additional Instructions:
+        - Strictly follow the Mermaid syntax for {selected_template} diagrams.
+        - Do not add any explanations or notes outside the Mermaid code.
+        - Ensure each line of the diagram is properly formatted according to the syntax.
+        - Do not use 'end' syntax unless it's explicitly part of the {selected_template} diagram syntax.
+
+        Generate the Mermaid code for the {selected_template} diagram:
+        """
 
         try:
             response = await call_llm(llm, prompt, temperature, max_tokens, timeout)
@@ -111,12 +196,12 @@ async def generate(input: str, selected_template: str, llm, selected_model: str,
                 raise retry_error.last_attempt.exception()
             else:
                 raise
-        
+        print(prompt)
         logger.debug(f"Raw LLM output: {response}")
         
         # Extract Mermaid code from the response
         mermaid_code = extract_mermaid_code(response)
-        
+        print("Mermaid COde: ", mermaid_code)
         return {"text": mermaid_code}
 
     except Exception as e:
