@@ -1,4 +1,4 @@
-# Sequence diagrams
+# Syntax
 
 > A Sequence diagram is an interaction diagram that shows how processes operate with one another and in what order.
 
@@ -18,14 +18,10 @@ sequenceDiagram
     Alice-)John: See you later!
 ```
 
-> **Note**
 > A note on nodes, the word "end" could potentially break the diagram, due to the way that the mermaid language is scripted.
 >
 > If unavoidable, one must use parentheses(), quotation marks "", or brackets {},\[], to enclose the word "end". i.e : (end), \[end], {end}.
 
-## Syntax
-
-### Participants
 
 The participants can be defined implicitly as in the first example on this page. The participants or actors are
 rendered in order of appearance in the diagram source text. Sometimes you might want to show the participants in a
@@ -48,8 +44,6 @@ sequenceDiagram
     Bob->>Alice: Hi Alice
 ```
 
-### Actors
-
 If you specifically want to use the actor symbol instead of a rectangle with text you can do so by using actor statements as per below.
 
 ```mermaid-example
@@ -68,7 +62,6 @@ sequenceDiagram
     Bob->>Alice: Hi Alice
 ```
 
-### Aliases
 
 The actor can have a convenient identifier and a descriptive label.
 
@@ -88,7 +81,6 @@ sequenceDiagram
     J->>A: Great!
 ```
 
-### Grouping / Box
 
 The actor(s) can be grouped in vertical boxes. You can define a color (if not, it will be transparent) and/or a descriptive label using the following notation:
 
@@ -102,7 +94,6 @@ The actor(s) can be grouped in vertical boxes. You can define a color (if not, i
     ... actors ...
     end
 
-> **Note**
 > If your group name is a color you can force the color to be transparent:
 
     box transparent Aqua
@@ -141,8 +132,6 @@ The actor(s) can be grouped in vertical boxes. You can define a color (if not, i
     B->>C: Hello Charly, how are you?
 ```
 
-## Messages
-
 Messages can be of two displayed either solid or with a dotted line.
 
     [Actor][Arrow][Actor]:Message text
@@ -160,7 +149,6 @@ There are six types of arrows currently supported:
 | `-)`   | Solid line with an open arrow at the end (async) |
 | `--)`  | Dotted line with a open arrow at the end (async) |
 
-## Activations
 
 It is possible to activate and deactivate an actor. (de)activation can be dedicated declarations:
 
@@ -212,7 +200,6 @@ sequenceDiagram
     John-->>-Alice: I feel great!
 ```
 
-## Notes
 
 It is possible to add notes to a sequence diagram. This is done by the notation
 Note \[ right of | left of | over ] \[Actor]: Text in note content
@@ -259,8 +246,6 @@ sequenceDiagram
     Note over Alice,John: A typical interaction<br/>But now in two lines
 ```
 
-## Loops
-
 It is possible to express loops in a sequence diagram. This is done by the notation
 
     loop Loop text
@@ -284,8 +269,6 @@ sequenceDiagram
         John-->Alice: Great!
     end
 ```
-
-## Alt
 
 It is possible to express alternative paths in a sequence diagram. This is done by the notation
 
@@ -328,8 +311,6 @@ sequenceDiagram
         Bob->>Alice: Thanks for asking
     end
 ```
-
-## Parallel
 
 It is possible to show actions that are happening in parallel.
 
@@ -396,9 +377,6 @@ sequenceDiagram
         end
     end
 ```
-
-## Critical Region
-
 It is possible to show actions that must happen automatically with conditional handling of circumstances.
 
 This is done by the notation

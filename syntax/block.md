@@ -2,8 +2,6 @@
 
 At its core, a block diagram consists of blocks representing different entities or components. In Mermaid, these blocks are easily created using simple text labels. The most basic form of a block diagram can be a series of blocks without any connectors.
 
-Example - Simple Block Diagram: To create a simple block diagram with three blocks labeled 'a', 'b', and 'c', the syntax is as follows:
-
 ```mermaid-example
 block-beta
   a b c

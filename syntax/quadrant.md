@@ -1,13 +1,8 @@
 ## Syntax
-INFO
 
 If there are no points available in the chart both axis text and quadrant will be rendered in the center of the respective quadrant. If there are points x-axis labels will rendered from the left of the respective quadrant also they will be displayed at the bottom of the chart, and y-axis labels will be rendered at the bottom of the respective quadrant, the quadrant text will render at the top of the respective quadrant.
 
-INFO
-
 For points x and y value min value is 0 and max value is 1.
-
-The title is a short description of the chart and it will always render on top of the chart.
 
 The x-axis determines what text would be displayed in the x-axis. In x-axis there is two part left and right you can pass both or you can pass only left. The statement should start with x-axis then the left axis text followed by the delimiter --> then right axis text.
 
