@@ -1,5 +1,6 @@
 # User Journey Diagram
 
+## Syntax
 > User journeys describe at a high level of detail exactly what steps different users take to complete a specific task within a system, application or website. This technique shows the current (as-is) user workflow, and reveals areas of improvement for the to-be workflow. (Wikipedia)
 
 Mermaid can render user journey diagrams:

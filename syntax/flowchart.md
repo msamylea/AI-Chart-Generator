@@ -1,12 +1,6 @@
-# Flowcharts - Basic Syntax
+## Syntax
 
-Flowcharts are composed of nodes (geometric shapes) and edges (arrows or lines). The Mermaid code defines how nodes and edges are made and accommodates different arrow types, multi-directional arrows, and any linking to and from subgraphs.
-
-It can also accommodate different arrow types, multi directional arrows, and linking to and from subgraphs.
-
-> **Important note**: Do not type the word "end" as a Flowchart node. Capitalize all or any one the letters to keep the flowchart from breaking, i.e, "End" or "END". Typing "end" in all lowercase letters will break the Flowchart.
-
-# WARNING
+Do not type the word "end" as a Flowchart node. Capitalize all or any one the letters to keep the flowchart from breaking, i.e, "End" or "END". Typing "end" in all lowercase letters will break the Flowchart.  It is also very important to use underscore for multiword descriptors and nodes.  For example, "wake up --> get out of bed" must be "wake_up --> get_out_of_bed" and "begin testing code" must be "begin_testing_code"
 
 If you are using the letter "o" or "x" as the first letter in a connecting Flowchart node, add a space before the letter or capitalize the letter (e.g., "dev--- ops", "dev---Ops").
 
@@ -16,6 +10,20 @@ Typing "A---xB" will create a cross edge.
 
 Typing "A o--o B" or "B <--> C" or "C x--x D" will create a multidirectional arrow.
 
+When creating flowcharts, be careful of this: b2 -->|calculation|> e2.  This is invalid. Do not put the > after the |
+
+It should be written like this: b2 -->|calculation| e2
+
+To render math within a diagram, surround the mathematical expression with the $$ delimiter. If you use sqrt frac etc you must do this.
+
+```mermaid
+---
+ graph LR
+      A["$$x^2$$"] -->|"$$\sqrt{x+3}$$"| B("$$\frac{1}{2}$$")
+      A -->|"$$\overbrace{a+b+c}^{\text{note}}$$"| C("$$\pi r^2$$")
+      B --> D("$$x = \begin{cases} a &\text{if } b \\ c &\text{if } d \end{cases}$$")
+      C --> E("$$x(t)=c_1\begin{bmatrix}-\cos{t}+\sin{t}\\ 2\cos{t} \end{bmatrix}e^{2t}$$")
+```
 
 ### A node (default)
 
