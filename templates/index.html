@@ -24,19 +24,21 @@
         }
 
         .btn-grad {
-            background-image: var(--primary-gradient);
-            color: #000;
-            font-weight: 600;
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
-            transition: all 0.3s ease-in-out;
-        }
-
-        .btn-grad:hover {
-            background-image: var(--secondary-gradient);
-            color: white;
-            transform: scale(1.05);
-        }
+          background-image: var(--primary-gradient);
+          color: #000;
+          font-weight: 600; /* font-semibold */
+          padding: 0.5rem 1rem; /* py-2 px-4 */
+          border-radius: 0.5rem; /* rounded-lg */
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1); /* shadow-md */
+          transition: all 0.3s ease-in-out; /* transition-all duration-300 ease-in-out */
+      }
+      
+      .btn-grad:hover {
+          background-image: var(--secondary-gradient);
+          color: #FFFFFF; /* text-white */
+          box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1); /* shadow-lg */
+          transform: scale(1.05); /* transform scale-105 */
+      }
 
         .bg-stripe {
             background: var(--background-dark) repeating-linear-gradient(
@@ -50,14 +52,34 @@
             );
         }
 
-        .input-custom, .select-custom {
-            background-color: #2D3748;
-            border: 1px solid #4A5568;
-            color: var(--text-light);
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
-            width: 100%;
+        .container {
+          max-width: 80rem; /* max-w-7xl */
+          margin: 0 auto; /* mx-auto */
+          padding: 1rem; /* px-4 */
+          padding-left: 1.5rem; /* sm:px-6 */
+          padding-right: 2rem; /* lg:px-8 */
+      }
+      
+        .card {
+            background-color: #1E293B; /* bg-gray-800 */
+            border-radius: 0.75rem; /* rounded-xl */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1); /* shadow-lg */
+            overflow: hidden;
         }
+        
+        .card-body {
+            padding: 1.5rem; /* p-6 */
+        }
+
+        .input-custom {
+          background-color: #374151; /* bg-gray-700 */
+          border: 1px solid #4B5563; /* border-gray-600 */
+          border-radius: 0.5rem; /* rounded-lg */
+          padding: 0.5rem 1rem; /* py-2 px-4 */
+          color: #F3F4F6; /* text-gray-100 */
+          outline: none; /* focus:outline-none */
+          transition: all 0.3s ease-in-out; /* transition-all duration-300 ease-in-out */
+      }
 
         .input-custom:focus, .select-custom:focus {
             outline: none;
@@ -66,23 +88,23 @@
         }
 
         .title-gradient {
-            background-image: var(--primary-gradient);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-        }
+          color: transparent; /* text-transparent */
+          background-clip: text;
+          background-image: var(--primary-gradient);
+      }
 
         .mermaid svg {
-            width: 100%; /* Adjust this value as needed */
-            height: auto; /* This will maintain the aspect ratio */
-            max-width: 100%;
-            max-height: 100%;
-        }
+          margin: 2rem auto; /* mx-auto my-8 */
+          border-radius: 0.75rem; /* rounded-lg */
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); /* shadow-2xl */
+          filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+      }
+      
         #chartContainer {
-            width: 90vw; /* Control the width based on viewport width */
-            height: 90vh; /* Adjust height as needed, here using viewport height */
+            width: 100%; 
+            height: auto; /* Adjust based on content */
             min-height: 500px; /* Ensures a minimum height */
-            min-width: 800px;
+            overflow: auto; /* Allows scrolling if content overflows */
         }
         .sidebar {
             position: fixed;
@@ -126,14 +148,26 @@
             color: #a0aec0;
           }
         
+          @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+          .animate-fade-in {
+              animation: fadeIn 0.5s ease-in-out;
+          }
+
           @media (max-width: 640px) {
             .sidebar {
               width: 100%;
               height: auto;
               position: static;
             }
-           
+            .btn-grad {
+              width: 100%; /* w-full */
           }
+      }
+           
 
     </style>
 </head>
@@ -206,14 +240,24 @@
           </div>
         </div>
       </div>
+    
+    <script type="module">
+
+      import zenuml from 'https://cdn.jsdelivr.net/npm/@mermaid-js/mermaid-zenuml@0.1.0/dist/mermaid-zenuml.esm.min.mjs';
+      await mermaid.registerExternalDiagrams([zenuml]);
+
+      mermaid.initialize({
+        startOnLoad: true,
+        theme: "dark",
+        securityLevel: "loose",
+        fontFamily: "Fira Code",
+    });
+
+    </script>
 
     <script>
-        mermaid.initialize({
-            startOnLoad: true,
-            theme: "dark",
-            securityLevel: "loose",
-            fontFamily: "Fira Code",
-        });
+      
+       
 
         let chart = '';
         const form = document.getElementById('flowchartForm');
@@ -260,8 +304,6 @@
             const initialContent = document.getElementById('initialContent');
             const exportOptions = document.getElementById('exportOptions');
         
-            // Initialize Mermaid
-            mermaid.initialize({ startOnLoad: false, theme: 'dark' });
         
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
@@ -334,33 +376,49 @@
         });
 
         function exportSvg() {
-            const svgElement = document.querySelector('svg');
-            if (!svgElement) {
-                console.error('SVG not found');
-                return;
-            }
-        
-            const serializer = new XMLSerializer();
-            const svgString = serializer.serializeToString(svgElement);
-            const svgBlob = new Blob([svgString], {type: 'image/svg+xml;charset=utf-8'});
-            const url = URL.createObjectURL(svgBlob);
-        
-            // Use a base name for the file, such as 'artists_chart'
-            let baseName = 'artists_chart';
-        
-            // Append a timestamp for uniqueness
-            let timestamp = new Date().toISOString().replace(/[:.-]/g, '_');
-            let fileName = `${baseName}_${timestamp}.svg`;
-        
-            // Create a temporary link to trigger the download
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', fileName);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link); // Clean up
-        }   
-
+          const svgElement = document.querySelector('svg');
+          if (!svgElement) {
+              console.error('SVG not found');
+              return;
+          }
+      
+          // Optionally, adjust the SVG size here if needed
+          const maxWidth = 1920; // Maximum width you want for the exported SVG
+          const maxHeight = 1080; // Maximum height you want for the exported SVG
+          const viewBox = svgElement.viewBox.baseVal;
+          const aspectRatio = viewBox.width / viewBox.height;
+          let scaleFactor = Math.min(maxWidth / viewBox.width, maxHeight / viewBox.height);
+      
+          // Apply a scaling transformation if the SVG is larger than the desired dimensions
+          if (scaleFactor < 1) {
+              svgElement.setAttribute("transform", `scale(${scaleFactor})`);
+              svgElement.setAttribute("width", viewBox.width * scaleFactor);
+              svgElement.setAttribute("height", viewBox.height * scaleFactor);
+          }
+      
+          const serializer = new XMLSerializer();
+          const svgString = serializer.serializeToString(svgElement);
+          const svgBlob = new Blob([svgString], {type: 'image/svg+xml;charset=utf-8'});
+          const url = URL.createObjectURL(svgBlob);
+      
+          let baseName = 'artists_chart';
+          let timestamp = new Date().toISOString().replace(/[:.-]/g, '_');
+          let fileName = `${baseName}_${timestamp}.svg`;
+      
+          const link = document.createElement('a');
+          link.href = url;
+          link.setAttribute('download', fileName);
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link); // Clean up
+      
+          // Reset transformations if applied
+          if (scaleFactor < 1) {
+              svgElement.removeAttribute("transform");
+              svgElement.removeAttribute("width");
+              svgElement.removeAttribute("height");
+          }
+      }
 
         async function copyMermaidCode() {
             try {
@@ -371,6 +429,8 @@
                 alert('Error copying Mermaid code');
             }
         }
-    </script>
+
+
+      </script>
 </body>
 </html>
