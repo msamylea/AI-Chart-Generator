@@ -231,7 +231,6 @@ class SDXLLLM(BaseLLM):
         except Exception as e:
             return f"Error generating image: {str(e)}"
 
-from openai import OpenAI
 
 class HFOpenAIAPILLM(BaseLLM):
     """
@@ -252,7 +251,7 @@ class HFOpenAIAPILLM(BaseLLM):
         base_url = f"https://api-inference.huggingface.co/models/{self.config.model}/v1/"
         return OpenAI(base_url=base_url, api_key=self.config.api_key)
 
-    def get_response(self, prompt: str, temperature: float = 0.7, max_tokens: int = 4096) -> str:
+    def get_response(self, prompt: str, temperature: float = 0.2, max_tokens: int = 4096) -> str:
         response = self.client.chat.completions.create(
             model=self.config.model,
             messages=[{"role": "user", "content": prompt}],

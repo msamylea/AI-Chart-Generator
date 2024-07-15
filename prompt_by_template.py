@@ -2,6 +2,7 @@ from enum import Enum
 
 class TemplateEnum(Enum):
     FLOWCHART = "FLOWCHART"
+    CLASS = "CLASS"
     MINDMAP = "MINDMAP"
     TIMELINE = "TIMELINE"
     USERJOURNEY = "USERJOURNEY"
@@ -13,7 +14,7 @@ class TemplateEnum(Enum):
     SANKEY = "SANKEY"
     REQUIREMENT = "REQUIREMENT"
     BLOCK = "BLOCK" 
-    ZENUML = "ZENUML"  # Added ZENUML to the enum
+    ZENUML = "ZENUML"  
 
 common_rules = """
 - Strict rules: Do not add Note and do not explain the code.
@@ -82,6 +83,8 @@ def prompt_by_template(template_enum: TemplateEnum, input_text: str) -> str:
         TemplateEnum.BLOCK: lambda input: f"Create a block diagram about {input}\n{common_rules}\n", 
 
         TemplateEnum.ZENUML: lambda input: f"Create a ZenUML diagram about {input}\n{common_rules}\n",
+
+        TemplateEnum.CLASS: lambda input: f"Create a class diagram about {input}\n{common_rules}\n" 
 
     }
 

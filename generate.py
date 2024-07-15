@@ -7,7 +7,6 @@ import re
 from tenacity import retry, stop_after_attempt, wait_exponential, RetryError
 from openai import AuthenticationError, BadRequestError
 import inspect
-from prompt_by_template import TemplateEnum, prompt_by_template
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
@@ -16,9 +15,6 @@ logger = logging.getLogger(__name__)
 def get_available_templates() -> List[str]:
     syntax_dir = os.path.join(os.path.dirname(__file__), 'syntax')
     return [file[:-3].upper() for file in os.listdir(syntax_dir) if file.endswith('.md')]
-
-import os
-import re
 
 def read_syntax_file(template: str) -> str:
     syntax_dir = os.path.join(os.path.dirname(__file__), 'syntax')
@@ -62,7 +58,7 @@ def read_syntax_file(template: str) -> str:
 
 def extract_mermaid_code(response: str) -> str:
     # Define the supported diagram types
-    diagram_types = r'(classDiagram|erDiagram|flowchart|mindmap|sequenceDiagram|stateDiagram|timeline|journey|gantt|block-beta|quadrantChart|sankey-beta|requirementDiagram|zenuml)'
+    diagram_types = r'(class|erDiagram|flowchart|mindmap|sequenceDiagram|stateDiagram|timeline|journey|gantt|block-beta|quadrantChart|sankey-beta|requirementDiagram|zenuml)'
     
     # Look for Mermaid code enclosed in ```mermaid ... ``` or just the content starting with a valid diagram type
     mermaid_pattern = r'```(?:mermaid)?\n([\s\S]*?)\n```'
@@ -127,6 +123,7 @@ def extract_mermaid_code(response: str) -> str:
     # Define a more permissive regex pattern for valid Mermaid syntax
     valid_syntax_pattern = rf"""
         ^\s*({diagram_types}|
+        %%\{{init:.*?\}}%%|
         \w+.*|
         \s*subgraph.*|
         \s*end.*|
@@ -184,8 +181,11 @@ async def generate(input: str, selected_template: str, llm, selected_model: str,
         - Strictly follow the Mermaid syntax for {selected_template} diagrams.
         - Do not add any explanations or notes outside the Mermaid code.
         - Ensure each line of the diagram is properly formatted according to the syntax.
+        - Consider the best orientation for flowcharts.  Long charts are often best oriented top to bottom.
         - Do not use 'end' syntax unless it's explicitly part of the {selected_template} diagram syntax.
-
+        - Try to use styling elements to make things aesthetically pleasing. 
+        - Only use colors that are supported by Mermaid, and ensure they are used appropriately. Unless you are using dark colors, text should be black.
+        - Be consistent with color conventions and styling throughout the diagram. 
         Generate the Mermaid code for the {selected_template} diagram:
         """
 

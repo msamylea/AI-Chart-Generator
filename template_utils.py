@@ -3,6 +3,7 @@ from typing import List, Dict
 
 class TemplateEnum(Enum):
     FLOWCHART = "FLOWCHART"
+    CLASS = "CLASS"
     MINDMAP = "MINDMAP"
     TIMELINE = "TIMELINE"
     USERJOURNEY = "USERJOURNEY"
@@ -19,6 +20,7 @@ class TemplateEnum(Enum):
 def get_templates() -> List[Dict[str, str]]:
     return [
         {"label": "Flowchart", "value": TemplateEnum.FLOWCHART.value},
+        {"label": "Class Diagram", "value": TemplateEnum.CLASS.value},
         {"label": "Mindmap", "value": TemplateEnum.MINDMAP.value},
         {"label": "Timeline", "value": TemplateEnum.TIMELINE.value},
         {"label": "User Journey", "value": TemplateEnum.USERJOURNEY.value},
