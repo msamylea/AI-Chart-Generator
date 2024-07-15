@@ -27,3 +27,9 @@ _If you get strange syntax errors, upgrade Mermaid via npm/yarn/whichever you ne
 
 
 ![image](https://github.com/user-attachments/assets/8026ef2c-4284-415c-a9ee-907d083bdde3)
+
+
+![image](https://github.com/user-attachments/assets/c671e803-fd5b-4938-910d-99290b58d806)
+
+![image](https://github.com/user-attachments/assets/7a5c7b03-fcfd-4476-a7bf-7393743cd3a1)
+
