@@ -1,6 +1,9 @@
 import logging
 from llm_config import LLMFactory, get_llm
 from typing import List, Optional, Any
+from llm_config import LLMFactory, get_llm
+from typing import List, Optional, Any
+from openai import AuthenticationError, RateLimitError
 
 logger = logging.getLogger(__name__)
 
@@ -13,6 +16,12 @@ def get_available_llms() -> List[dict]:
     """
     return [{"value": llm, "label": llm} for llm in LLMFactory.llm_classes.keys()]
 
+
+
+logger = logging.getLogger(__name__)
+
+# ... (keep the existing get_available_llms function)
+
 def set_llm(selected_provider: str, selected_model: str, api_key: str = None) -> Optional[Any]:
     """
     Instantiates and returns an LLM object based on the selected provider and model.
@@ -24,16 +33,21 @@ def set_llm(selected_provider: str, selected_model: str, api_key: str = None) ->
 
     Returns:
         An instance of the selected LLM, or None if instantiation fails.
+
+    Raises:
+        ValueError: If the provider or model is not selected, or if the API key is invalid.
+        NotImplementedError: If the selected provider is not supported.
+        AuthenticationError: If the API key is invalid or missing.
+        RateLimitError: If the API rate limit is exceeded.
+        Exception: For any other unexpected errors.
     """
     logger.debug(f"Setting LLM for provider: {selected_provider}, model: {selected_model}")
 
     if not selected_provider:
-        logger.error("Error: No LLM provider selected")
-        return None
+        raise ValueError("No LLM provider selected")
 
     if not selected_model:
-        logger.error("Error: No model selected")
-        return None
+        raise ValueError("No model selected")
 
     # Trim any extra spaces from the provider and model names
     selected_provider = selected_provider.strip()
@@ -42,6 +56,8 @@ def set_llm(selected_provider: str, selected_model: str, api_key: str = None) ->
     kwargs = {}
     if api_key:
         kwargs['api_key'] = api_key
+    elif selected_provider != 'ollama':
+        raise ValueError(f"API key is required for {selected_provider}")
 
     try:
         # Handle Gemini model names
@@ -53,11 +69,19 @@ def set_llm(selected_provider: str, selected_model: str, api_key: str = None) ->
         selected_llm = get_llm(provider=selected_provider, model=selected_model, **kwargs)
         
         if not hasattr(selected_llm, 'get_response'):
-            logger.error(f"The object returned for {selected_provider} does not have a 'get_response' method.")
-            raise ValueError(f"The object returned for {selected_provider} does not have a 'get_response' method.")
+            raise NotImplementedError(f"The {selected_provider} provider does not support the 'get_response' method.")
         
         logger.debug(f"Successfully created LLM instance for provider: {selected_provider}, model: {selected_model}")
         return selected_llm
+    except AuthenticationError:
+        logger.error(f"Authentication failed for {selected_provider}. Please check your API key.")
+        raise
+    except RateLimitError:
+        logger.error(f"Rate limit exceeded for {selected_provider}. Please try again later.")
+        raise
+    except NotImplementedError as e:
+        logger.error(str(e))
+        raise
     except Exception as e:
-        logger.exception(f"Error creating LLM instance: {str(e)}")
-        return None
+        logger.exception(f"Unexpected error creating LLM instance: {str(e)}")
+        raise ValueError(f"Failed to initialize {selected_provider} with model {selected_model}: {str(e)}")

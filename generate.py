@@ -4,8 +4,8 @@ import os
 import logging
 import time
 import re
-from tenacity import retry, stop_after_attempt, wait_exponential, RetryError
-from openai import AuthenticationError, BadRequestError
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type, RetryError
+from openai import AuthenticationError, RateLimitError, BadRequestError
 import inspect
 
 # Set up logging
@@ -159,6 +159,28 @@ def extract_mermaid_code(response: str) -> str:
     return final_code
 
 
+class LLMError(Exception):
+    """Base class for LLM-related errors."""
+    pass
+
+class AuthError(LLMError):
+    """Raised when there's an authentication error."""
+    pass
+
+class RateLimitError(LLMError):
+    """Raised when the rate limit is exceeded."""
+    pass
+
+class BadRequestError(LLMError):
+    """Raised when there's a bad request error."""
+    pass
+
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=4, max=10),
+    retry=retry_if_exception_type((RateLimitError, BadRequestError)),
+    reraise=True
+)
 async def generate(input: str, selected_template: str, llm, selected_model: str, temperature: float, max_tokens: int, timeout: int = 300) -> Dict[str, Any]:
     start_time = time.time()
     try:
@@ -183,8 +205,8 @@ async def generate(input: str, selected_template: str, llm, selected_model: str,
         - Ensure each line of the diagram is properly formatted according to the syntax.
         - Consider the best orientation for flowcharts.  Long charts are often best oriented top to bottom.
         - Do not use 'end' syntax unless it's explicitly part of the {selected_template} diagram syntax.
-        - Try to use styling elements to make things aesthetically pleasing. 
-        - Only use colors that are supported by Mermaid, and ensure they are used appropriately. Unless you are using dark colors, text should be black.
+        - Try to use styling elements to make things aesthetically pleasing. Do not use pink or purple colors.
+        - Unless you are using dark colors, text should be black.
         - Be consistent with color conventions and styling throughout the diagram. 
         Generate the Mermaid code for the {selected_template} diagram:
         """
@@ -192,16 +214,22 @@ async def generate(input: str, selected_template: str, llm, selected_model: str,
         try:
             response = await call_llm(llm, prompt, temperature, max_tokens, timeout)
         except RetryError as retry_error:
-            if isinstance(retry_error.last_attempt.exception(), (BadRequestError, AuthenticationError)):
-                raise retry_error.last_attempt.exception()
+            if isinstance(retry_error.last_attempt.exception(), AuthenticationError):
+                raise AuthError("Authentication failed. Please check your API key.")
+            elif isinstance(retry_error.last_attempt.exception(), RateLimitError):
+                raise RateLimitError("Rate limit exceeded. Please try again later.")
+            elif isinstance(retry_error.last_attempt.exception(), BadRequestError):
+                raise BadRequestError(f"Bad request: {str(retry_error.last_attempt.exception())}")
             else:
-                raise
-        print(prompt)
+                raise LLMError(f"Unexpected error calling LLM: {str(retry_error.last_attempt.exception())}")
+        except Exception as e:
+            raise LLMError(f"Unexpected error calling LLM: {str(e)}")
+
         logger.debug(f"Raw LLM output: {response}")
         
         # Extract Mermaid code from the response
         mermaid_code = extract_mermaid_code(response)
-        print("Mermaid COde: ", mermaid_code)
+        logger.debug(f"Extracted Mermaid code: {mermaid_code}")
         return {"text": mermaid_code}
 
     except Exception as e:
@@ -226,3 +254,4 @@ async def call_llm(llm, prompt: str, temperature: float, max_tokens: int, timeou
         kwargs['max_tokens'] = max_tokens
     
     return await loop.run_in_executor(None, lambda: llm.get_response(**kwargs))
+    

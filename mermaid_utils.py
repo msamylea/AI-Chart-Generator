@@ -1,4 +1,3 @@
-import base64
 from io import BytesIO
 
 def render_mermaid(mermaid_code: str) -> str:

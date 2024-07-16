@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, jsonify
-from generate import generate
+from generate import generate, AuthError, RateLimitError, BadRequestError, LLMError
 from mermaid_utils import render_mermaid
 from template_utils import get_templates
 from llm_utils import get_available_llms, set_llm
@@ -55,47 +55,39 @@ async def handler():
     max_tokens = int(data.get('maxTokens', 4096))
     api_key = data.get('apiKey', '').strip()
 
-    print("Selected Template: ", selected_template)
-    logger.debug(f"Parsed request data: input_text={input_text}, selected_template={selected_template}, "
-                 f"selected_provider={selected_provider}, selected_model={selected_model}, "
-                 f"temperature={temperature}, max_tokens={max_tokens}")
-
-    if not input_text:
-        logger.error("No input in the request")
-        return jsonify({"error": "No input in the request"}), 400
-
-    if not selected_provider:
-        logger.error("No LLM provider selected")
-        return jsonify({"error": "No LLM provider selected"}), 400
-
-    if not selected_model:
-        logger.error("No model selected")
-        return jsonify({"error": "No model selected"}), 400
-
-    if selected_provider != 'ollama' and not api_key:
-        logger.error("No API key provided for non-Ollama provider")
-        return jsonify({"error": "API key is required for this provider"}), 400
-
     try:
         llm = set_llm(selected_provider, selected_model, api_key)
         if llm is None:
-            logger.error(f"Failed to initialize LLM for provider: {selected_provider}, model: {selected_model}")
             return jsonify({"error": f"Failed to initialize LLM for provider: {selected_provider}, model: {selected_model}"}), 400
-
-        logger.debug(f"Generating result with: input_text={input_text}, selected_template={selected_template}, "
-                     f"llm={llm}, selected_model={selected_model}, temperature={temperature}, max_tokens={max_tokens}")
 
         result = await generate(input_text, selected_template, llm, selected_model, temperature, max_tokens)
         
-        logger.debug(f"Generation result: {result}")
-
         mermaid_code = result['text']
         rendered_chart = render_mermaid(mermaid_code)
         return jsonify({"text": rendered_chart})
 
+    except ValueError as e:
+        logger.error(f"Value error: {str(e)}")
+        return jsonify({"error": str(e)}), 400
+    except AuthError as e:
+        logger.error(f"Authentication error: {str(e)}")
+        return jsonify({"error": str(e)}), 401
+    except RateLimitError as e:
+        logger.error(f"Rate limit error: {str(e)}")
+        return jsonify({"error": str(e)}), 429
+    except BadRequestError as e:
+        logger.error(f"Bad request error: {str(e)}")
+        return jsonify({"error": str(e)}), 400
+    except LLMError as e:
+        logger.error(f"LLM error: {str(e)}")
+        error_message = str(e)
+        if "API key not valid" in error_message:
+            return jsonify({"error": "Invalid API key. Please check your API key and try again."}), 400
+        else:
+            return jsonify({"error": error_message}), 500
     except Exception as e:
-        logger.exception(f"Error in handler: {str(e)}")
-        return jsonify({"error": str(e)}), 500
-
+        logger.exception(f"Unexpected error in handler: {str(e)}")
+        return jsonify({"error": f"An unexpected error occurred: {str(e)}"}), 500
+    
 if __name__ == '__main__':
     app.run(debug=True)
