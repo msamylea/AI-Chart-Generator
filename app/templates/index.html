@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flowchart Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js"></script>
+    <script src="/static/js/main.js"></script>
+    <link rel = "stylesheet" href ="/static/css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    </head>
+<body class="bg-stripe">
+    <div class="sidebar">
+        <div class="card">
+            <h2 class="text-l font-bold title-gradient mb-6">Diagram Generator</h2>
+            <div class="flex flex-col gap-4 mb-4 w-full">
+                <div class="flex items-center gap-2">
+                    <label for="llmProvider" class="label">LLM Provider</label>
+                    <div class="tooltip-container">
+                        <i class="fa-solid fa-circle-question"></i>
+                        <span class="tooltip-text">Gemini: Google Gemini Models <br> HuggingFace-OpenAI: OpenAI API for HF Models <br> HuggingFace-Text: InferenceClient for HF Models</span>
+                    </div>
+                </div>
+                <select id="llmProvider" class="input-custom">
+                    <option value="">Select Provider</option>
+                    {% for llm in available_llms %}
+                        <option value="{{ llm.value }}">{{ llm.label }}</option>
+                    {% endfor %}
+                </select>
+      
+            <div id="modelSelection">
+              <label for="llmModel" class="label">Model</label>
+              <select id="llmModel" class="input-custom" disabled>
+                  <option value="">Select Model</option>
+              </select>
+          </div>
+      
+          <div id="manualModelInput" style="display: none;">
+            <label for="manualModel" class="label">Model Name</label>
+            <input type="text" id="manualModel" placeholder="Enter model name" class="input-custom">
+        </div>
+
+        <label for="apiKey" class="label">API Key</label>
+        <input type="password" id="apiKey" placeholder="Enter API Key" class="input-custom">
+        
+        <label for="temperature" class="label">Temperature</label>
+        <input type="number" id="temperature" min="0" max="1" step="0.1" class="input-custom" value="0.2">
+
+        <label for="maxTokens" class="label">Max Tokens</label>
+        <input type="number" id="maxTokens" min="100" max="500000" step="64" class="input-custom" value="4096">
+
+        <div id="toastPanel" class="toast-panel"></div>
+
+    </div>
+  </div>
+  </div>
+      
+      <div class="container">
+        <div class="flex-grow flex flex-col justify-center items-center">
+          <div id="errorContainer" class="hidden w-full max-w-2xl text-center py-4 mb-4">
+            <p id="errorMessage" class="text-red-500 font-bold"></p>
+          </div>
+
+            <div id="chartContainer" class="card">
+            <div id="loadingIndicator" class="hidden flex flex-col justify-center items-center">
+              <h1 class="animate-text">Loading...</h1>
+            </div>
+            <div id="chart" class="hidden"></div>
+            <div id="initialContent" class="text-center py-12">
+              <h1 class="text-6xl font-bold title-gradient mb-4">Generate</h1>
+              <h3 class="text-9xl pb-3 font-black title-gradient mb-2">Diagrams</h3>
+              <br>
+              <h2 class="text-4xl font-bold text-gray-300">using AI</h2>
+            </div>
+          </div>
+      
+          <form id="flowchartForm" class="w-full max-w-2xl">
+            <div class="flex flex-col sm:flex-row gap-4 mb-4">
+              <input id="inputField" class="input-custom flex-grow" type="text" placeholder="Describe what you want to visualize.." autofocus>
+              <button type="submit" id="submitButton" class="btn-grad">Generate</button>
+            </div>
+            <select id="templateSelect" class="input-custom w-full">
+              {% for template in templates %}
+                <option value="{{ template.value }}">{{ template.label }}</option>
+              {% endfor %}
+            </select>
+          </form>
+      
+          <div id="exportOptions" class="hidden mt-6 flex gap-4">
+            <button onclick="exportSvg()" class="btn-grad">Export SVG</button>
+            <button onclick="copyMermaidCode()" class="btn-grad">Copy Mermaid Code</button>
+          </div>
+
+          <div id="footer" class="text-center mt-8 text-gray-500 italic bottom-0">
+            <p class="text-sm">Created by <a href="mailto:aevalone@gmail.com"> Amy Marks</a>
+        </div>
+      </div>
+    
+    <script type="module">
+
+      import zenuml from 'https://cdn.jsdelivr.net/npm/@mermaid-js/mermaid-zenuml@0.1.0/dist/mermaid-zenuml.esm.min.mjs';
+      await mermaid.registerExternalDiagrams([zenuml]);
+
+      mermaid.initialize({
+        startOnLoad: true,
+        theme: "dark",
+        securityLevel: "loose",
+        fontFamily: "Fira Code",
+    });
+
+    </script>
+
+<div class="toast-panel" id="toastPanel"></div>
+
+</body>
+</html>
