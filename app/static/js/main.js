@@ -159,10 +159,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const link = document.createElement('a');
         link.href = url;
-        link.setAttribute('download', fileName);
+        link.download = fileName; // This triggers download instead of opening in a new tab
         document.body.appendChild(link);
         link.click();
-        document.body.removeChild(link); // Clean up
+        document.body.removeChild(link);
+
+        // Clean up the URL object
+        URL.revokeObjectURL(url);
+
+        showToast('success', 'Success', 'SVG file download started');
     }
 
     async function copyMermaidCode() {
