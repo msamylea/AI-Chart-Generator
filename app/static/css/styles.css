@@ -226,15 +226,16 @@ transition: all 0.3s ease-in-out; /* transition-all duration-300 ease-in-out */
 }
 
 #chartContainer {
-  width: 90vw;
-  max-width: 56rem;
+  width: 155vw;
+  max-width: 80rem;
   height: auto;
-  min-height: 500px;
+  min-height: 750px;
   overflow: auto;
 }
 #chart {
   width: 100%;
   height: 100%;
+  overflow: visible;
 }
 .sidebar {
   position: fixed;
