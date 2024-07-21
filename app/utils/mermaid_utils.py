@@ -169,7 +169,9 @@ def extract_mermaid_code(response: str) -> str:
         \s*%%.*|
         \s*)
     """
-    
+
+    if re.search(r'\|.*\|>', processed_code):
+        processed_code = re.sub(r'\|(.*?)\|>', r'|\1|', processed_code)
     # Special handling for mindmap and block-beta
     if re.match(r'^(mindmap|block-beta)', processed_code, re.IGNORECASE):
         # For mindmap and block-beta, we want to keep all lines that are not completely blank
@@ -217,17 +219,21 @@ async def generate(input: str, selected_template: str, llm, selected_model: str,
 
         {syntax_doc}
 
-        Additional Instructions:
+         Additional Instructions:
         - Strictly follow the Mermaid syntax for {selected_template} diagrams.
+        - Use the appropriate flow diagram symbols and connectors where applicable.
+        - Long text should be wrapped by using "'<text>'" around the strings
+        - To create bold text, use double asterisks ** before and after the text.
+        - For italics, use single asterisks * before and after the text.
         - Do not add any explanations or notes outside the Mermaid code.
         - Ensure each line of the diagram is properly formatted according to the syntax.
-        - Consider the best orientation for flowcharts.  Long charts are often best oriented top to bottom.
+        - Top to bottom is preferred for flow charts. Long charts are often best oriented top to bottom. 
         - Do not use 'end' syntax unless it's explicitly part of the {selected_template} diagram syntax.
-        - Try to use styling elements to make things aesthetically pleasing. 
-        - IMPORTANT: Do not use pink or purple or shades of those.
-        - Dark text is required on light backgrounds and light text is required on dark backgrounds.1
-        - Unless you are using dark colors, text should be black.
-        - Be consistent with color conventions and styling throughout the diagram. 
+        - Use clear labels to avoid ambiguity and ensure all understand the information. Label all screens, actions, and decisions. 
+        - Make sure your user flows are complete and lead to a clear resolution.
+        - Ensure the diagram is clear and easy to understand at a glance.
+        - Always have a legend key if you are using colors or icons.
+        - Use color with purpose in your user flows. Assign different colors to different elements to make the diagram easier to understand. For instance, use green for decisions, blue for screens, and yellow for entry points. 
         Generate the Mermaid code for the {selected_template} diagram:
         """
 
