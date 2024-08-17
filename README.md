@@ -1,7 +1,7 @@
 
 # AI Chart Generation with Mermaid
 
-Rewrote FlowGPT (https://github.com/nilooy/flowgpt/) in Python and added support for Gemini, HuggingFace, and Ollama. Updated UI and made parsing changes.  Added several additional types of mermaid charts (Gantt, Block, Sankey, Requirements Diagram, ZenUML)
+Added support for Gemini, HuggingFace, and Ollama. Updated UI and made parsing changes.  Added several additional types of mermaid charts (Gantt, Block, Sankey, Requirements Diagram, ZenUML)
 
 To run, just clone the repository and run run.py which will start the local Flask app at http://127.0.0.1:5000
 
